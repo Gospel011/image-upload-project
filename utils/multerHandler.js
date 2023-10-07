@@ -36,7 +36,7 @@ const uploadImageFromBuffer = (buffer, cb) => {
     .upload_stream(
       {
         resource_type: 'image',
-        public_id: `user-${Math.round(Math.random() * 1e9)}-${Date.now()}.jpeg`,
+        public_id: `user-${Math.round(Math.random() * 1e9)}-${Date.now()}`,
       }, // Set resource_type to 'image'
       (error, result) => {
         cb(error, result);
@@ -50,10 +50,7 @@ exports.processImage = async (req, res, next) => {
 
   if (!req.file) return next();
 
-
   console.log('IMAGE BUFFER', req.file.buffer);
-
-  
 
   await sharp(req.file.buffer)
     .resize(500, 500)

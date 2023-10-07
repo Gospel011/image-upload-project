@@ -54,11 +54,9 @@ exports.updateProfile = async (req, res, next) => {
     );
 
     if (previousPublicId)
-      await cloudinary.uploader
-        .destroy(previousPublicId)
-        .then((result) => {
-          console.log({ result });
-        });
+      await cloudinary.uploader.destroy(previousPublicId).then((result) => {
+        console.log({ result });
+      });
   } else {
     user = await User.findByIdAndUpdate(
       { _id: req.user._id },
