@@ -7,7 +7,7 @@ const AppError = require('./appError');
 const storage = multer.memoryStorage();
 
 const fileFilter = function (req, file, cb) {
-  const permittedExtentions = ['png', 'jpg', 'jpeg', 'mp4'];
+  const permittedExtentions = ['png', 'jpg', 'jpeg', 'mp4', 'octet-stream'];
   const ext = file.mimetype.split('/')[1];
   console.log('EXTENSION', ext);
 
