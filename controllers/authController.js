@@ -1,8 +1,7 @@
-
 const User = require('./../models/userModel');
 const asyncHandler = require('./../utils/asyncHandler');
 const AppError = require('./../utils/appError');
-
+const cloudinary = require('./../utils/cloudinary');
 
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
@@ -22,19 +21,26 @@ exports.validate = async (req, res, next) => {
   if (!email || !password)
     return next(new AppError('please provide both the email and password'));
 
-  const user = await User.findOne({ email, password });
-
-  if (!user) return next(new AppError('username or password is incorrect'));
-
+    console.log('FINDING USER')
+    const user = await User.findOne({ email, password });
+    
+    if (!user) return next(new AppError('username or password is incorrect', 404));
+    
+    console.log('USER FOUND', user)
   req.user = user;
   next();
 };
 
 exports.updateProfile = async (req, res, next) => {
-  // console.log('USER REQUESTING PROFILE UPDATE', req);
-  console.log('UPDATE REQUEST FILE NAME', req.file.filename);
+  console.log('USER REQUESTING PROFILE UPDATE', req);
+  if (req.file) console.log('UPDATE REQUEST FILE NAME', req.file.filename);
 
   let user = req.user;
+  let previousPublicId;
+  if(user.profilePicture != 'default.png') {
+    previousPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
+    console.log('PREVIOUS PUBLIC ID', previousPublicId)
+  }
 
   if (req.file) {
     user = await User.findByIdAndUpdate(
@@ -42,10 +48,18 @@ exports.updateProfile = async (req, res, next) => {
       { name: req.body.name, profilePicture: req.file.filename },
       { new: true }
     );
+
+
+    if (previousPublicId) cloudinary.uploader.destroy(previousPublicId, (err, result) => {
+      if (err) return next(new AppError(`previous public id ${previousPublicId} NOT successfully destroyed`));
+      console.log(`previous public id ${previousPublicId} successfully destroyed with result =`, result);
+    })
+
   } else {
     user = await User.findByIdAndUpdate(
       { _id: req.user._id },
-      { name: req.body.name }
+      { name: req.body.name },
+      {new: true}
     );
   }
 
@@ -62,8 +76,8 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
   console.log('REQUEST BODY', req.body);
 
-  //   res.status(501).json({
-  //     status: 'success',
-  //     user,
-  //   });
+    res.status(201).json({
+      status: 'success',
+      user,
+    });
 });
