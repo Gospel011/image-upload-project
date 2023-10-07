@@ -5,6 +5,8 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+console.log('UPLOAD IMAGE FROM BUFFER');
+
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');

@@ -2,7 +2,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const cloudinary = require('./cloudinary');
 const fs = require('fs');
-const AppError = require('./appError')
+const AppError = require('./appError');
 
 const storage = multer.memoryStorage();
 
@@ -28,56 +28,52 @@ const upload = multer({
 
 exports.uploadProfilePicture = upload.single('profilePicture');
 
-exports.processImage = async (req, res, next) => {
+const uploadImageFromBuffer = (buffer, cb) => {
+  // const buffer = req.file.buffer; // Get the uploaded image buffer
 
-  console.log('ORIGINAL REQ URL', req.originalUrl)
+  // Upload the image buffer to Cloudinary
+  cloudinary.uploader
+    .upload_stream(
+      {
+        resource_type: 'image',
+        public_id: `user-${Math.round(Math.random() * 1e9)}-${Date.now()}.jpeg`,
+      }, // Set resource_type to 'image'
+      (error, result) => {
+        cb(error, result);
+      }
+    )
+    .end(buffer);
+};
+
+exports.processImage = async (req, res, next) => {
+  console.log('ORIGINAL REQ URL', req.originalUrl);
 
   if (!req.file) return next();
 
-  // console.log(`DIRNAME ${__dirname}`)
-
-  req.file.filename = `user-${Math.round(
-    Math.random() * 1e9
-  )}-${Date.now()}.jpeg`; //${req.file.mimetype.split('/')[1]}`;
 
   console.log('IMAGE BUFFER', req.file.buffer);
 
-  const filePath = `users/profile-photo/${req.file.filename}`
+  
 
   await sharp(req.file.buffer)
     .resize(500, 500)
     .jpeg({ quality: 100 })
-    .toFormat('jpeg')
-    .toFile(filePath);
+    .toFormat('jpeg');
 
   console.log('CLOUDINARY UPLOAD FILE', req.file);
 
-  cloudinary.uploader.upload(
-    `users/profile-photo/${req.file.filename}`,
-    { use_filename: true },
-    (err, result) => {
-      if (err) {
-        console.log('CLOUDINARY ERROR', err);
-        return next(new AppError(`${err.message}`));
-      }
-      console.log('CLOUDINARY UPLOAD RESULT', result);
-
-      // DELETE THE LOCALLY STORED FILE
-
-
-      // Schedule the deletion after 10 seconds
-      setTimeout(() => {
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error(`Error deleting file: ${err}`);
-          } else {
-            console.log(`File ${filePath} deleted successfully.`);
-          }
-        });
-      }, 1 * 1000); // 10 seconds in milliseconds
-
+  uploadImageFromBuffer(req.file.buffer, (error, result) => {
+    if (error) {
+      console.error(error);
+      return next(new AppError('Failed to upload image'));
+    } else {
+      console.log(result);
+      console.log('SECURE URL FROM UPLOAD STREAM', result.secure_url);
       req.file.filename = result.secure_url;
       next();
     }
-  );
+  });
+
+  // }
+  // );
 };
