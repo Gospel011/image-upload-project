@@ -15,6 +15,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const userRouter = require('./routes/userRoutes');
+const testRouter = require('./routes/test');
 const globalErrorHandler = require('./controllers/errorController');
 require('dotenv').config();
 
@@ -56,6 +57,7 @@ app.use(morgan('dev'));
 app.use('*', cors());
 
 app.use('/user', userRouter);
+app.use('/test', testRouter);
 
 // USE GLOBAL ERROR HANDLER
 app.use(globalErrorHandler);
