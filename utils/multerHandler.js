@@ -3,6 +3,7 @@ const sharp = require('sharp');
 const cloudinary = require('./cloudinary');
 const fs = require('fs');
 const AppError = require('./appError');
+const User = require('./../models/userModel')
 
 const storage = multer.memoryStorage();
 
@@ -28,21 +29,22 @@ const upload = multer({
 
 exports.uploadProfilePicture = upload.single('profilePicture');
 
-const uploadImageFromBuffer = (buffer, cb) => {
+const uploadImageFromBuffer = async (req, cb) => {
   // const buffer = req.file.buffer; // Get the uploaded image buffer
+  
 
   // Upload the image buffer to Cloudinary
   cloudinary.uploader
     .upload_stream(
       {
         resource_type: 'image',
-        public_id: `user-${Math.round(Math.random() * 1e9)}-${Date.now()}`,
+        public_id: `user-${req.user._id}-${Math.round(Math.random() * 1e9)}-${Date.now()}`,
       }, // Set resource_type to 'image'
       (error, result) => {
         cb(error, result);
       }
     )
-    .end(buffer);
+    .end(req.file.buffer);
 };
 
 exports.processImage = async (req, res, next) => {
@@ -59,7 +61,7 @@ exports.processImage = async (req, res, next) => {
 
   console.log('CLOUDINARY UPLOAD FILE', req.file);
 
-  uploadImageFromBuffer(req.file.buffer, (error, result) => {
+  uploadImageFromBuffer(req, (error, result) => {
     if (error) {
       console.error(error);
       return next(new AppError('Failed to upload image'));

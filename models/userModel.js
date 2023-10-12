@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -32,11 +33,33 @@ const userSchema = new mongoose.Schema({
         message: 'your password and confirm password fields dont\'t match'
     }
   },
+  lastChangedPassword: Date,
   profilePicture: {
     type: String,
     default: 'default.png',
   },
 });
+
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password, 12);
+  this.confirmPassword = undefined;
+
+  this.lastChangedPassword = Date.now() - 2 * 1000
+
+  next();
+})
+
+userSchema.methods.changedPasswordAfterJwtIAT = function (jwtIAT) {
+  return jwtIAT < this.lastChangedPassword.getTime() / 1000
+}
+
+userSchema.methods.checkPassword = async function (clientPassword) {
+  // console.log({});
+
+  return await bcrypt.compare(clientPassword, this.password)
+}
 
 const userModel = mongoose.model('User', userSchema);
 

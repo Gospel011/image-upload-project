@@ -2,6 +2,9 @@ const User = require('./../models/userModel');
 const asyncHandler = require('./../utils/asyncHandler');
 const AppError = require('./../utils/appError');
 const cloudinary = require('./../utils/cloudinary');
+const jwt = require('jsonwebtoken');
+
+const {promisify} = require('util');
 
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
@@ -14,20 +17,45 @@ const cloudinary = require('./../utils/cloudinary');
 //     }
 // })
 
+const signJwt = (id) => {
+  return token = jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRY_DATE,
+  });
+
+}
+
 exports.validate = async (req, res, next) => {
-  console.log('VALIDATE BODY', req.body);
-  const { email, password } = req.body;
+  // check if there is an authorization field in the header
+  const authorization = req.headers.authorization;
 
-  if (!email || !password)
-    return next(new AppError('please provide both the email and password'));
+  console.log('HEADERS', req.headers)
 
-  console.log('FINDING USER');
-  const user = await User.findOne({ email, password });
+  if (!authorization)
+    return next(
+      new AppError(
+        'Please signin and provide an access token to access this resource'
+      )
+    );
+  // get token from the authorization field
+  const token = authorization.split(' ')[1];
+  console.log({token});
+  if(!token) return next(new AppError('Please provide an log in and provide an access token'))
+  // verify that the token has not been tampered with
+  const payload = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log({payload});
+  if (!payload) return next(new AppError('This token is either invalid or has expired', 400));
 
-  if (!user)
-    return next(new AppError('username or password is incorrect', 404));
+  // get the user whose id is in the token payload
+  const user = await User.findOne({_id: payload.id});
+  console.log({user});
 
-  console.log('USER FOUND', user);
+  if (!user) return next(new AppError('This user does not exist', 400));
+  // ensure that the user has not changed his password after the jwt has been issued
+
+  const changedPasswordAfterJwtIAT = user.changedPasswordAfterJwtIAT(payload.iat)
+
+  console.log( "changedPasswordAfterJwtIAT", changedPasswordAfterJwtIAT)
+
   req.user = user;
   next();
 };
@@ -71,15 +99,38 @@ exports.updateProfile = async (req, res, next) => {
   });
 };
 
-exports.createUser = asyncHandler(async (req, res, next) => {
+exports.signUp = asyncHandler(async (req, res, next) => {
   const { name, email, password, confirmPassword } = req.body;
+
+  console.log('REQUEST BODY =', req.body);
 
   const user = await User.create({ name, email, password, confirmPassword });
 
-  console.log('REQUEST BODY', req.body);
 
   res.status(201).json({
     status: 'success',
-    user,
+    message: 'user created successfully'
+  });
+});
+
+exports.signIn = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if(!email || !password) return next(new AppError('Please provide both an email and a password', 400));
+
+  const user = await User.findOne({ email });
+
+  if (!user) return next(new AppError('Email or password is incorrect', 400))
+
+  const correctPassword = await user.checkPassword(password)
+  console.log('CORRECT PASSWORD?', correctPassword)
+
+  if (!correctPassword) return next(new AppError('Email or password is incorrect', 400))
+
+
+
+  res.status(201).json({
+    status: 'success',
+    token: signJwt(user._id)
   });
 });
