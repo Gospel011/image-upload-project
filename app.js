@@ -14,7 +14,7 @@ const keepAlive = ()=> {
     console.log("inside set timeout");
     axios.get('http://img-upload.onrender.com/test/status').then(result => console.log(result.data))
     keepAlive();
-  }, 10 * 60 * 1000)
+  }, 14 * 60 * 1000)
 
 }
 
