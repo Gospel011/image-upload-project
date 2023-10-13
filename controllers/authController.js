@@ -189,6 +189,12 @@ exports.signUp = asyncHandler(async (req, res, next) => {
 exports.signIn = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
+  console.log('REQUEST BODY', req.body);
+
+  // console.log("REQUEST OBJECT", req);
+
+  // console.log("REQUEST HEADERS", req.headers);
+
   if (!email || !password)
     return next(
       new AppError('Please provide both an email and a password', 400)

@@ -5,6 +5,22 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+const axios = require('axios');
+axios.get('http://img-upload.onrender.com/test/status').then(result => console.log(result.data))
+
+const keepAlive = ()=> {
+
+  setTimeout(()=> {
+    console.log("inside set timeout");
+    axios.get('http://img-upload.onrender.com/test/status').then(result => console.log(result.data))
+    keepAlive();
+  }, 10 * 60 * 1000)
+
+}
+
+keepAlive();
+
+
 console.log('UPLOAD IMAGE FROM BUFFER');
 
 const rateLimit = require('express-rate-limit');
@@ -34,8 +50,8 @@ app.use(hpp());
 // LIMIT REQUESTS BEYOND A CERTAIN THRESHOLD
 
 const limiter = rateLimit({
-  max: 2,
-  windowMs: 10 * 1000,
+  max: 200,
+  windowMs: 1 * 60 * 60 * 1000,
   message: 'Too many requests. Please try again later',
 });
 
