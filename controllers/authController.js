@@ -215,5 +215,6 @@ exports.signIn = asyncHandler(async (req, res, next) => {
   res.status(201).json({
     status: 'success',
     token: signJwt(user._id),
+    user
   });
 });
