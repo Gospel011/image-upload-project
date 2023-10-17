@@ -9,7 +9,8 @@ router.get('/status', (req, res, next) => {
         message: {
             '1.)':  'Improved the auth route and made some changes to the user model',
             '2.)':  'Added keep alive functionality',
-            '3.)':  'Increased KAT'
+            '3.)':  'Increased KAT',
+            '4.)':  'Return user on sign in'
         }
     })
 })
