@@ -23,7 +23,7 @@ const upload = multer({
     files: 1,
     fileSize: 10 * 1024 * 1024,
     fields: 6,
-    parts: 7,
+    //parts: 7,
   },
 });
 
