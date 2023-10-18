@@ -11,7 +11,8 @@ router.get('/status', (req, res, next) => {
             '2.)':  'Added keep alive functionality',
             '3.)':  'Increased KAT',
             '4.)':  'Return user on sign in',
-            '5.)':  'Increased the fields size and the parts'
+            '5.)':  'Increased the fields size and the parts',
+            '6.)':  'Removed parts'
         }
     })
 })
